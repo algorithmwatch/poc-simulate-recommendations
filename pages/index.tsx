@@ -1,9 +1,44 @@
-import type { NextPage } from 'next'
-import Head from 'next/head'
-import Image from 'next/image'
-import styles from '../styles/Home.module.css'
+import type { NextPage } from "next";
+import Head from "next/head";
+import Image from "next/image";
+import styles from "../styles/Home.module.css";
+import { csv } from "d3-fetch";
+import Item from "../components/item";
+import { useState } from "react";
 
-const Home: NextPage = () => {
+import _ from "lodash";
+
+import { distance, parse } from "mathjs";
+
+const Home: NextPage = ({ data }) => {
+  const [value1, setValue1] = useState("0");
+  const [value2, setValue2] = useState("0");
+  const [value3, setValue3] = useState("0");
+  const onChange1 = (event) => {
+    setValue1(event.target.value);
+  };
+  const onChange2 = (event) => {
+    setValue2(event.target.value);
+  };
+  const onChange3 = (event) => {
+    setValue3(event.target.value);
+  };
+
+  const arg0 = [value1 || "0", value2 || "0", value3 || "0"].map(parseFloat);
+  const arg1 = data.map((x) =>
+    [x["cat1"], x["cat2"], x["cat3"]].map(parseFloat)
+  );
+
+  const dists = arg1.map((x) => distance(arg0, x));
+
+  let orderedData = data.map(function (e, i) {
+    return { ...e, dist: dists[i] };
+  });
+
+  console.log(dists);
+
+  orderedData = _.orderBy(orderedData, "dist");
+
   return (
     <div className={styles.container}>
       <Head>
@@ -13,44 +48,37 @@ const Home: NextPage = () => {
       </Head>
 
       <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+        <h1 className={styles.title}>Welcome to Platform Simulator 3000!</h1>
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
+        <input
+          value={value1}
+          onChange={onChange1}
+          type="number"
+          min="0"
+          max="1"
+          step="0.1"
+        />
+        <input
+          value={value2}
+          onChange={onChange2}
+          type="number"
+          min="0"
+          max="1"
+          step="0.1"
+        />
+        <input
+          value={value3}
+          onChange={onChange3}
+          type="number"
+          min="0"
+          max="1"
+          step="0.1"
+        />
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h2>Documentation &rarr;</h2>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h2>Learn &rarr;</h2>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h2>Examples &rarr;</h2>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h2>Deploy &rarr;</h2>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
+        {orderedData.map((x, i) => (
+          <Item {...x} key={i} />
+        ))}
+        <div></div>
       </main>
 
       <footer className={styles.footer}>
@@ -59,14 +87,37 @@ const Home: NextPage = () => {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Powered by{' '}
+          Powered by{" "}
           <span className={styles.logo}>
             <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
           </span>
         </a>
       </footer>
     </div>
-  )
-}
+  );
+};
 
-export default Home
+let data = null;
+
+const setupData = async () => {
+  if (data !== null) return data;
+
+  let url = "http://localhost:3000/data.csv";
+  if (process.env.NODE_ENV === "production") url = "http://toto.de/data.csv";
+
+  data = await csv(url);
+
+  return data;
+};
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const data = await setupData();
+
+  return {
+    props: {
+      data,
+    },
+  };
+};
+
+export default Home;
