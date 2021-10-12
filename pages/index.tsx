@@ -103,7 +103,8 @@ const setupData = async () => {
   if (data !== null) return data;
 
   let url = "http://localhost:3000/data.csv";
-  if (process.env.NODE_ENV === "production") url = "http://toto.de/data.csv";
+  if (process.env.NODE_ENV === "production")
+    url = "http://prod1.algorithmwatch.org/data.csv";
 
   data = await csv(url);
 
