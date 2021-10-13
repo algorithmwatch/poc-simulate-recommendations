@@ -8,36 +8,44 @@ import { useState } from "react";
 
 import _ from "lodash";
 
-import { distance, parse } from "mathjs";
+import { distance } from "mathjs";
 
-const Home: NextPage = ({ data }) => {
-  const [value1, setValue1] = useState("0");
-  const [value2, setValue2] = useState("0");
-  const [value3, setValue3] = useState("0");
-  const onChange1 = (event) => {
-    setValue1(event.target.value);
-  };
-  const onChange2 = (event) => {
-    setValue2(event.target.value);
-  };
-  const onChange3 = (event) => {
-    setValue3(event.target.value);
-  };
+const toFloat = (str) => (str == null ? 0 : parseFloat(str));
 
-  const arg0 = [value1 || "0", value2 || "0", value3 || "0"].map(parseFloat);
-  const arg1 = data.map((x) =>
-    [x["cat1"], x["cat2"], x["cat3"]].map(parseFloat)
-  );
+const orderByDistance = (data, selection) => {
+  const keys = Object.keys(selection);
+  const selectionValues = keys.map((x) => selection[x]).map(toFloat);
 
-  const dists = arg1.map((x) => distance(arg0, x));
-
-  let orderedData = data.map(function (e, i) {
-    return { ...e, dist: dists[i] };
+  const orderedData = data.map(function (e, i) {
+    const subset = keys.map((x) => e[x]).map(toFloat);
+    return { ...e, dist: distance(selectionValues, subset) };
   });
 
-  console.log(dists);
+  return _.orderBy(orderedData, "dist");
+};
 
-  orderedData = _.orderBy(orderedData, "dist");
+const Home: NextPage = ({ data, controls }) => {
+  const initialValue = Object.assign(
+    {},
+    ...controls.map((x) => ({ [x]: "0" }))
+  );
+  const [value1, setValue1] = useState(initialValue);
+
+  const controlEl = controls.map((x) => (
+    <>
+      <label>{x}</label>
+      <input
+        key={x}
+        value={value1[x]}
+        onChange={(event) => setValue1({ ...value1, [x]: event.target.value })}
+        type="number"
+        min="0"
+        max="1"
+        step="0.1"
+      ></input>
+      <br />
+    </>
+  ));
 
   return (
     <div className={styles.container}>
@@ -50,48 +58,16 @@ const Home: NextPage = ({ data }) => {
       <main className={styles.main}>
         <h1 className={styles.title}>Welcome to Platform Simulator 3000!</h1>
 
-        <input
-          value={value1}
-          onChange={onChange1}
-          type="number"
-          min="0"
-          max="1"
-          step="0.1"
-        />
-        <input
-          value={value2}
-          onChange={onChange2}
-          type="number"
-          min="0"
-          max="1"
-          step="0.1"
-        />
-        <input
-          value={value3}
-          onChange={onChange3}
-          type="number"
-          min="0"
-          max="1"
-          step="0.1"
-        />
+        {controlEl}
 
-        {orderedData.map((x, i) => (
+        {orderByDistance(data, value1).map((x, i) => (
           <Item {...x} key={i} />
         ))}
         <div></div>
       </main>
 
       <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{" "}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
+        <div></div>
       </footer>
     </div>
   );
@@ -117,6 +93,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   return {
     props: {
       data,
+      controls: ["cat1", "cat2", "cat3", "length", "age", "likes"],
     },
   };
 };

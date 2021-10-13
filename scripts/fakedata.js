@@ -38,7 +38,6 @@ const getUnique = async (prevImage) => {
       length: Math.random(),
       age: Math.random(),
       likes: Math.random(),
-      dislikes: Math.random(),
     });
   }
 
