@@ -8,17 +8,39 @@ import { useState } from "react";
 
 import _ from "lodash";
 
-import { distance } from "mathjs";
+import { distance, multiply } from "mathjs";
 
 const toFloat = (str) => (str == null ? 0 : parseFloat(str));
 
+const weightVector = (selectionKeys, keys, values, selection) => {
+  if (selectionKeys.includes("content")) {
+    for (const k of ["cat1", "cat2", "cat3"]) {
+      const kIndex = keys.indexOf(k);
+      if (kIndex >= 0) {
+        values[kIndex] = multiply(values[kIndex], selection["content"]);
+      }
+    }
+  }
+};
+
 const orderByDistance = (data, selection) => {
-  const keys = Object.keys(selection);
+  const selectionKeys = Object.keys(_.pickBy(selection, (v) => v !== "0"));
+  const dataKeys = Object.keys(data[0]);
+  const keys = _.intersection(selectionKeys, dataKeys);
+
+  if (!keys.length) return data;
+
   const selectionValues = keys.map((x) => selection[x]).map(toFloat);
 
-  const orderedData = data.map(function (e, i) {
+  weightVector(selectionKeys, keys, selectionValues, selection);
+
+  const orderedData = data.map((e) => {
     const subset = keys.map((x) => e[x]).map(toFloat);
-    return { ...e, dist: distance(selectionValues, subset) };
+
+    weightVector(selectionKeys, keys, subset, selection);
+
+    const dist = distance(selectionValues, subset);
+    return { ...e, dist };
   });
 
   return _.orderBy(orderedData, "dist");
@@ -93,7 +115,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   return {
     props: {
       data,
-      controls: ["cat1", "cat2", "cat3", "length", "age", "likes"],
+      controls: ["cat1", "cat2", "cat3", "length", "age", "likes", "content"],
     },
   };
 };
