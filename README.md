@@ -1,6 +1,6 @@
 # Proof of Concept: Simulate Personalized Recommendations
 
-A proof of concept on how to simulate personalized recommendations:
+A proof of concept on how to simulate personalized recommendations.
 
 ## Development
 
